@@ -29,7 +29,11 @@ var (
 			return strings.ToLower(value) == "true", nil
 		},
 		"number": func(value string) (interface{}, error) {
-			return strconv.ParseInt(value, 10, 64)
+			i, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return strconv.ParseFloat(value, 64)
+			}
+			return i, err
 		},
 		"object": func(value string) (interface{}, error) {
 			m := map[string]interface{}{}
