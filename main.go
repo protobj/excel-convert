@@ -213,7 +213,7 @@ func writeLuaFile(fileName string, clientResult []interface{}, sheetName string,
 	}
 	serverTable := strings.Builder{}
 	serverTable.WriteString("return ")
-	writeLuaTableContent(&serverTable, clientResult, 0)
+	writeLuaTableContent(&serverTable, serverResult, 0)
 	os.WriteFile(*luaDir+"/server/"+fileName+"/"+sheetName+".lua", []byte(serverTable.String()), fs.ModePerm)
 }
 
