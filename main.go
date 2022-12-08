@@ -50,7 +50,6 @@ var (
 )
 
 func main() {
-
 	const recordFileName = "./fileRecord.json"
 	file, err := os.ReadFile(recordFileName)
 	if err == nil {
@@ -136,60 +135,9 @@ func parseSheet(path string, fileName string, sheetName string, rows [][]string,
 	var serverResult []interface{}
 	var clientResult []interface{}
 	if strings.HasSuffix(sheetName, "_single") {
-		var serverIndex = 2
-		var clientIndex = 3
-		var typeIndex = 4
-		var valueIndex = 5
-		var start = false
-		var clientObj = make(map[string]interface{})
-		var serverObj = make(map[string]interface{})
-		for i, row := range rows {
-			if !start {
-				if row[0] == "START" {
-					start = true
-				}
-				continue
-			} else {
-				if row[0] == "#" {
-					continue
-				}
-				if row[0] == "END" {
-					break
-				}
-				if len(row) <= valueIndex {
-					fmt.Printf("error value in %s  sheet:%s  row:%d cellLen:%d \n", path, sheetName, i, valueIndex)
-					os.Exit(-1)
-				}
-
-				type0 := row[typeIndex]
-				if _, ok := supportType[type0]; !ok {
-					fmt.Printf("error type in %s  sheet:%s  row:%d cell:%d value:%s\n", path, sheetName, i, typeIndex, type0)
-					os.Exit(-1)
-				}
-				value := row[valueIndex]
-				decoder, _ := supportType[type0]
-
-				jsonValue, err := decoder(value)
-				if err != nil {
-					fmt.Printf("error value in %s  sheet:%s  row:%d cell:%d value:%s\n", path, sheetName, i, valueIndex, value)
-					os.Exit(-1)
-				}
-
-				clientName := row[clientIndex]
-				if clientName != "" {
-					clientObj[clientName] = jsonValue
-				}
-				serverName := row[serverIndex]
-				if serverName != "" {
-					serverObj[serverName] = jsonValue
-				}
-			}
-		}
-		serverResult = append(serverResult, serverObj)
-		clientResult = append(clientResult, clientObj)
+		serverResult, clientResult = readVertical(path, rows, sheetName)
 	} else {
-		//TODO 横向解析
-
+		serverResult, clientResult = readHorizontal(path, rows, sheetName)
 	}
 	if *jsonDir != "" {
 		writeJsonFile(fileName, clientResult, sheetName, serverResult)
@@ -197,6 +145,117 @@ func parseSheet(path string, fileName string, sheetName string, rows [][]string,
 	if *luaDir != "" {
 		writeLuaFile(fileName, clientResult, sheetName, serverResult)
 	}
+}
+
+func readHorizontal(path string, rows [][]string, sheetName string) (serverResult []interface{}, clientResult []interface{}) {
+	var start = false
+
+	var serverRow = rows[1]
+	var clientRow = rows[2]
+	var typeRow = rows[3]
+	for i := 4; i < len(rows); i++ {
+		row := rows[i]
+		if row == nil {
+			continue
+		}
+		if row[0] == "#" {
+			continue
+		}
+		if !start {
+			if row[0] == "START" {
+				start = true
+			}
+			continue
+		}
+		if row[0] == "END" {
+			break
+		}
+		var clientObj = make(map[string]interface{})
+		var serverObj = make(map[string]interface{})
+		for j := 1; j < len(row); j++ {
+			type0 := typeRow[j]
+			if _, ok := supportType[type0]; !ok {
+				fmt.Printf("error type in %s  sheet:%s  row:%d cell:%d value:%s\n", path, sheetName, i, j, type0)
+				os.Exit(-1)
+			}
+			value := row[j]
+			decoder, _ := supportType[type0]
+			jsonValue, err := decoder(value)
+			if err != nil {
+				fmt.Printf("error value in %s  sheet:%s  row:%d cell:%d value:%s\n", path, sheetName, i, j, value)
+				os.Exit(-1)
+			}
+
+			clientName := clientRow[j]
+			if clientName != "" {
+				clientObj[clientName] = jsonValue
+			}
+			serverName := serverRow[j]
+			if serverName != "" {
+				serverObj[serverName] = jsonValue
+			}
+		}
+		serverResult = append(serverResult, serverObj)
+		clientResult = append(clientResult, clientObj)
+	}
+	return serverResult, clientResult
+}
+func readVertical(path string, rows [][]string, sheetName string) (serverResult []interface{}, clientResult []interface{}) {
+	const serverIndex = 2
+	const clientIndex = 3
+	const typeIndex = 4
+	const valueIndex = 5
+	var start = false
+	var clientObj = make(map[string]interface{})
+	var serverObj = make(map[string]interface{})
+	for i, row := range rows {
+		if row == nil {
+			continue
+		}
+		if !start {
+			if row[0] == "START" {
+				start = true
+			}
+			continue
+		} else {
+			if row[0] == "#" {
+				continue
+			}
+			if row[0] == "END" {
+				break
+			}
+			if len(row) <= valueIndex {
+				fmt.Printf("error value in %s  sheet:%s  row:%d cellLen:%d \n", path, sheetName, i, valueIndex)
+				os.Exit(-1)
+			}
+
+			type0 := row[typeIndex]
+			if _, ok := supportType[type0]; !ok {
+				fmt.Printf("error type in %s  sheet:%s  row:%d cell:%d value:%s\n", path, sheetName, i, typeIndex, type0)
+				os.Exit(-1)
+			}
+			value := row[valueIndex]
+			decoder, _ := supportType[type0]
+
+			jsonValue, err := decoder(value)
+			if err != nil {
+				fmt.Printf("error value in %s  sheet:%s  row:%d cell:%d value:%s\n", path, sheetName, i, valueIndex, value)
+				os.Exit(-1)
+			}
+
+			clientName := row[clientIndex]
+			if clientName != "" {
+				clientObj[clientName] = jsonValue
+			}
+			serverName := row[serverIndex]
+			if serverName != "" {
+				serverObj[serverName] = jsonValue
+			}
+		}
+	}
+	serverResult = append(serverResult, serverObj)
+	clientResult = append(clientResult, clientObj)
+	return serverResult, clientResult
 }
 
 func writeLuaFile(fileName string, clientResult []interface{}, sheetName string, serverResult []interface{}) {
