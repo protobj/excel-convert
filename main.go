@@ -259,7 +259,7 @@ func readVertical(path string, rows [][]string, sheetName string) (serverResult 
 }
 
 func writeLuaFile(fileName string, clientResult []interface{}, sheetName string, serverResult []interface{}) {
-	err := createDir(*luaDir + "/client/" + fileName)
+	err := createDir(*luaDir + "/client/")
 	if err != nil {
 		println(err.Error())
 		os.Exit(-1)
@@ -267,9 +267,9 @@ func writeLuaFile(fileName string, clientResult []interface{}, sheetName string,
 	clientTable := strings.Builder{}
 	clientTable.WriteString("return ")
 	writeLuaTableContent(&clientTable, clientResult, 0)
-	os.WriteFile(*luaDir+"/client/"+fileName+"/"+sheetName+".lua", []byte(clientTable.String()), fs.ModePerm)
+	os.WriteFile(*luaDir+"/client/"+sheetName+".lua", []byte(clientTable.String()), fs.ModePerm)
 
-	err = createDir(*luaDir + "/server/" + fileName)
+	err = createDir(*luaDir + "/server/")
 	if err != nil {
 		println(err.Error())
 		os.Exit(-1)
@@ -277,26 +277,26 @@ func writeLuaFile(fileName string, clientResult []interface{}, sheetName string,
 	serverTable := strings.Builder{}
 	serverTable.WriteString("return ")
 	writeLuaTableContent(&serverTable, serverResult, 0)
-	os.WriteFile(*luaDir+"/server/"+fileName+"/"+sheetName+".lua", []byte(serverTable.String()), fs.ModePerm)
+	os.WriteFile(*luaDir+"/server/"+sheetName+".lua", []byte(serverTable.String()), fs.ModePerm)
 }
 
 func writeJsonFile(fileName string, clientResult []interface{}, sheetName string, severResult []interface{}) {
-	err := createDir(*jsonDir + "/client/" + fileName)
+	err := createDir(*jsonDir + "/client/")
 	if err != nil {
 		println(err.Error())
 		os.Exit(-1)
 	}
 	clientTable, _ := json.Marshal(clientResult)
 
-	os.WriteFile(*jsonDir+"/client/"+fileName+"/"+sheetName+".json", clientTable, fs.ModePerm)
+	os.WriteFile(*jsonDir+"/client/"+sheetName+".json", clientTable, fs.ModePerm)
 
-	err = createDir(*jsonDir + "/server/" + fileName)
+	err = createDir(*jsonDir + "/server/")
 	if err != nil {
 		println(err.Error())
 		os.Exit(-1)
 	}
 	serverTable, _ := json.Marshal(severResult)
-	os.WriteFile(*jsonDir+"/server/"+fileName+"/"+sheetName+".json", serverTable, fs.ModePerm)
+	os.WriteFile(*jsonDir+"/server/"+sheetName+".json", serverTable, fs.ModePerm)
 }
 
 // 创建文件夹
